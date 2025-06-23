@@ -111,4 +111,3 @@ document.addEventListener('DOMContentLoaded', () => {
   performSync(); // Initial sync
   setInterval(performSync, 60000); // Periodic sync every 60 seconds
 });
-
