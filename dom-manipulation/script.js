@@ -1,11 +1,4 @@
-let quotes = [];
-
-// DOM elements
-const quoteDisplay = document.getElementById("quoteDisplay");
-const newQuoteButton = document.getElementById("newQuote");
-const categoryFilter = document.getElementById("categoryFilter");
-
-// Notification div (create if not exists)
+// Notification element setup (create if not present)
 let notification = document.getElementById("notification");
 if (!notification) {
   notification = document.createElement("div");
@@ -23,7 +16,6 @@ if (!notification) {
   document.body.appendChild(notification);
 }
 
-// Show notification message
 function showNotification(message, isError = false) {
   notification.textContent = message;
   notification.style.background = isError ? "#f08080" : "#90ee90";
@@ -34,7 +26,7 @@ function showNotification(message, isError = false) {
   }, 3000);
 }
 
-// Create Add Quote form dynamically
+// Updated createAddQuoteForm function
 function createAddQuoteForm() {
   const formSection = document.createElement("div");
   formSection.style.marginTop = "30px";
@@ -62,146 +54,81 @@ function createAddQuoteForm() {
   formSection.appendChild(addBtn);
   document.body.appendChild(formSection);
 
-  addBtn.addEventListener("click", addQuote);
-}
+  addBtn.addEventListener("click", async () => {
+    const text = quoteInput.value.trim();
+    const category = categoryInput.value.trim();
 
-// Save quotes array to localStorage
-function saveQuotes() {
-  localStorage.setItem("quotes", JSON.stringify(quotes));
-}
+    if (!text || !category) {
+      alert("Please enter both a quote and a category.");
+      return;
+    }
 
-// Load quotes from localStorage or fallback to defaults
-function loadQuotes() {
-  const stored = localStorage.getItem("quotes");
-  if (stored) {
-    quotes = JSON.parse(stored);
-  } else {
-    quotes = [
-      { text: "The only limit to our realization of tomorrow is our doubts of today.", category: "Motivational" },
-      { text: "Imagination is more important than knowledge.", category: "Inspirational" },
-      { text: "Life is what happens when you're busy making other plans.", category: "Life" }
-    ];
+    // Add quote locally
+    quotes.push({ text, category });
     saveQuotes();
-  }
-}
+    updateCategoryFilterOptions();
+    showNotification("Quote added locally!");
 
-// Update dropdown with available categories
-function updateCategoryFilterOptions() {
-  const categories = Array.from(new Set(quotes.map(q => q.category)));
-  categoryFilter.innerHTML = `<option value="All">All Categories</option>`;
-  categories.forEach(cat => {
-    const option = document.createElement("option");
-    option.value = cat;
-    option.textContent = cat;
-    categoryFilter.appendChild(option);
-  });
-}
+    // Clear inputs
+    quoteInput.value = "";
+    categoryInput.value = "";
 
-// Show a random quote and store it in sessionStorage
-function showRandomQuote() {
-  const selectedCategory = categoryFilter.value;
-  const filteredQuotes = selectedCategory === "All"
-    ? quotes
-    : quotes.filter(q => q.category === selectedCategory);
+    // Post quote to server
+    try {
+      // Replace with your real API endpoint
+      const response = await fetch("https://mockapi.example.com/quotes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ text, category })
+      });
 
-  if (filteredQuotes.length === 0) {
-    quoteDisplay.innerHTML = `<p>No quotes available for this category.</p>`;
-    return;
-  }
+      if (!response.ok) throw new Error("Failed to post quote");
 
-  const randomQuote = filteredQuotes[Math.floor(Math.random() * filteredQuotes.length)];
-  quoteDisplay.innerHTML = `
-    "${randomQuote.text}"<br>
-    <span class="quote-category">— ${randomQuote.category}</span>
-  `;
-
-  // Save last viewed quote to sessionStorage
-  sessionStorage.setItem("lastQuote", JSON.stringify(randomQuote));
-}
-
-// Restore the last viewed quote from sessionStorage
-function loadLastQuote() {
-  const last = sessionStorage.getItem("lastQuote");
-  if (last) {
-    const q = JSON.parse(last);
-    quoteDisplay.innerHTML = `
-      "${q.text}"<br>
-      <span class="quote-category">— ${q.category}</span>
-    `;
-  }
-}
-
-// Add a new quote and update everything
-function addQuote() {
-  const text = document.getElementById("newQuoteText").value.trim();
-  const category = document.getElementById("newQuoteCategory").value.trim();
-
-  if (!text || !category) {
-    alert("Please enter both a quote and a category.");
-    return;
-  }
-
-  quotes.push({ text, category });
-  saveQuotes();
-  updateCategoryFilterOptions();
-  alert("Quote added!");
-  document.getElementById("newQuoteText").value = "";
-  document.getElementById("newQuoteCategory").value = "";
-}
-
-// Merge local and server quotes, avoiding duplicates by quote text
-function mergeQuotes(local, server) {
-  const localTexts = new Set(local.map(q => q.text));
-  const merged = [...local];
-
-  server.forEach(serverQuote => {
-    if (!localTexts.has(serverQuote.text)) {
-      merged.push(serverQuote);
+      showNotification("Quote synced to server!");
+    } catch (error) {
+      console.error("Error posting quote:", error);
+      showNotification("Failed to sync quote to server.", true);
     }
   });
-
-  return merged;
 }
 
-// Sync quotes from server and merge with local data
+// Sync function: fetch new quotes periodically and merge
 async function syncQuotes() {
   try {
-    // Replace URL with your actual API endpoint
-    const response = await fetch('https://example.com/api/quotes');
+    const response = await fetch("https://mockapi.example.com/quotes");
     if (!response.ok) throw new Error(`Network error: ${response.status}`);
 
     const serverQuotes = await response.json();
+    if (!Array.isArray(serverQuotes)) throw new Error("Invalid server data");
 
-    if (!Array.isArray(serverQuotes)) throw new Error("Server returned invalid data");
+    // Merge without duplicates (by text)
+    const localTexts = new Set(quotes.map(q => q.text));
+    const merged = [...quotes];
 
-    const merged = mergeQuotes(quotes, serverQuotes);
+    serverQuotes.forEach(sq => {
+      if (!localTexts.has(sq.text)) {
+        merged.push(sq);
+      }
+    });
+
     if (merged.length !== quotes.length) {
       quotes = merged;
       saveQuotes();
       updateCategoryFilterOptions();
-      showNotification('Quotes synced successfully!');
+      showNotification("Quotes synced from server!");
     } else {
-      showNotification('No new quotes to sync.');
+      showNotification("No new quotes from server.");
     }
   } catch (error) {
-    console.error('Sync failed:', error);
-    showNotification('Failed to sync quotes.', true);
+    console.error("Sync failed:", error);
+    showNotification("Failed to sync quotes.", true);
   }
 }
 
-// Initialize app and event listeners
-function init() {
-  loadQuotes();
-  updateCategoryFilterOptions();
-  createAddQuoteForm();
-  loadLastQuote();
+// Set up periodic sync (every 5 minutes)
+setInterval(syncQuotes, 5 * 60 * 1000); // 5 mins
 
-  newQuoteButton.addEventListener("click", showRandomQuote);
-  categoryFilter.addEventListener("change", showRandomQuote);
-
-  // Initial sync + periodic every 5 minutes
-  syncQuotes();
-  setInterval(syncQuotes, 5 * 60 * 1000);
-}
-
-init();
+// Initial call to sync on load
+syncQuotes();
