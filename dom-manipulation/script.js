@@ -1,4 +1,4 @@
-const SERVER_URL = "https://mocki.io/v1/your-mock-endpoint-id"; // Replace with your real endpoint
+const SERVER_URL = "https://jsonplaceholder.typicode.com/posts";
 let quotes = [];
 
 function loadQuotes() {
@@ -7,9 +7,9 @@ function loadQuotes() {
     quotes = JSON.parse(storedQuotes);
   } else {
     quotes = [
-      { text: "The best way to get started is to quit talking and begin doing.", category: "Motivation" },
-      { text: "Don't let yesterday take up too much of today.", category: "Inspiration" },
-      { text: "It's not whether you get knocked down, it's whether you get up.", category: "Resilience" }
+      { text: "Start where you are. Use what you have. Do what you can.", category: "Motivation" },
+      { text: "Success is not in what you have, but who you are.", category: "Inspiration" },
+      { text: "Act as if what you do makes a difference. It does.", category: "Positivity" }
     ];
     saveQuotes();
   }
@@ -23,7 +23,6 @@ function populateCategories() {
   const categories = [...new Set(quotes.map(q => q.category))];
   const select = document.getElementById('categoryFilter');
   select.innerHTML = `<option value="all">All Categories</option>`;
-
   categories.forEach(category => {
     const option = document.createElement('option');
     option.value = category;
@@ -74,7 +73,7 @@ function exportToJsonFile() {
 
 function importFromJsonFile(event) {
   const fileReader = new FileReader();
-  fileReader.onload = function(e) {
+  fileReader.onload = function (e) {
     try {
       const importedQuotes = JSON.parse(e.target.result);
       if (Array.isArray(importedQuotes)) {
@@ -103,12 +102,18 @@ function restoreLastQuote() {
   }
 }
 
-// 🔄 Sync with simulated server (server wins in conflict)
+// ✅ Sync quotes from simulated server (GET)
 async function fetchQuotesFromServer() {
   const statusEl = document.getElementById('syncStatus');
   try {
     const res = await fetch(SERVER_URL);
-    const serverQuotes = await res.json();
+    const data = await res.json();
+
+    // Use first 5 posts as fake quotes
+    const serverQuotes = data.slice(0, 5).map(post => ({
+      text: post.title,
+      category: "Server" // Placeholder category
+    }));
 
     const serverSet = new Set(serverQuotes.map(q => JSON.stringify(q)));
     const localSet = new Set(quotes.map(q => JSON.stringify(q)));
@@ -130,6 +135,26 @@ async function fetchQuotesFromServer() {
   }
 }
 
+// ✅ Simulate POST to server
+async function postQuotesToServer() {
+  try {
+    const res = await fetch(SERVER_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(quotes)
+    });
+
+    const data = await res.json();
+    console.log("Posted to server (simulated):", data);
+    document.getElementById('syncStatus').innerText = "Quotes posted to server (simulated).";
+  } catch (err) {
+    console.error("Post error:", err);
+    document.getElementById('syncStatus').innerText = "Failed to post quotes.";
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   loadQuotes();
   populateCategories();
@@ -141,6 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('categoryFilter').addEventListener('change', filterQuotes);
   document.getElementById('syncNowBtn').addEventListener('click', fetchQuotesFromServer);
 
-  fetchQuotesFromServer();                 // Initial sync on load
-  setInterval(fetchQuotesFromServer, 60000); // Auto-sync every 60s
+  fetchQuotesFromServer();                      // Initial fetch
+  setInterval(fetchQuotesFromServer, 60000);   // Auto-sync every 60s
 });
+
