@@ -1,6 +1,6 @@
 let quotes = [];
 
-// Load quotes from localStorage on initialization
+// Load quotes from localStorage
 function loadQuotes() {
   const storedQuotes = localStorage.getItem('quotes');
   if (storedQuotes) {
@@ -11,15 +11,16 @@ function loadQuotes() {
       "Don't let yesterday take up too much of today.",
       "It's not whether you get knocked down, it's whether you get up."
     ];
-    saveQuotes(); // Save default quotes
+    saveQuotes();
   }
 }
 
+// Save quotes to localStorage
 function saveQuotes() {
   localStorage.setItem('quotes', JSON.stringify(quotes));
 }
 
-// Display a random quote and store its index in sessionStorage
+// Show a random quote and store the index in sessionStorage
 function showRandomQuote() {
   const index = Math.floor(Math.random() * quotes.length);
   const quote = quotes[index];
@@ -27,7 +28,7 @@ function showRandomQuote() {
   sessionStorage.setItem('lastQuoteIndex', index);
 }
 
-// Export quotes as JSON
+// Export quotes to a JSON file
 function exportToJsonFile() {
   const blob = new Blob([JSON.stringify(quotes, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -52,14 +53,14 @@ function importFromJsonFile(event) {
       } else {
         alert('Invalid format: JSON must be an array of strings.');
       }
-    } catch (error) {
-      alert('Error parsing JSON file.');
+    } catch (err) {
+      alert('Failed to import JSON. Error: ' + err.message);
     }
   };
   fileReader.readAsText(event.target.files[0]);
 }
 
-// Restore last viewed quote from session storage
+// Restore the last shown quote from sessionStorage
 function restoreLastQuote() {
   const index = sessionStorage.getItem('lastQuoteIndex');
   if (index !== null && quotes[index]) {
@@ -67,8 +68,19 @@ function restoreLastQuote() {
   }
 }
 
-// Initialize app
-window.onload = function () {
+// Wait until the DOM is fully loaded
+document.addEventListener('DOMContentLoaded', () => {
   loadQuotes();
   restoreLastQuote();
-};
+
+  // Attach event listeners (optional — if you use `id`s or classes)
+  document.querySelector('button[onclick="showRandomQuote()"]')
+    .addEventListener('click', showRandomQuote);
+
+  document.querySelector('button[onclick="exportToJsonFile()"]')
+    .addEventListener('click', exportToJsonFile);
+
+  document.getElementById('importFile')
+    .addEventListener('change', importFromJsonFile);
+});
+
