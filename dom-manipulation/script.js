@@ -169,4 +169,3 @@ document.addEventListener('DOMContentLoaded', () => {
   fetchQuotesFromServer();                      // Initial fetch
   setInterval(fetchQuotesFromServer, 60000);   // Auto-sync every 60s
 });
-
