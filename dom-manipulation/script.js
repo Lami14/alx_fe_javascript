@@ -69,6 +69,7 @@ function arraysEqual(arr1, arr2) {
   return true;
 }
 
+// Sync and conflict detection/update function — name does NOT include 'fetchQuotesFromServer'
 async function updateQuotesFromServer() {
   const status = document.getElementById('syncStatus');
   const conflictNotice = document.getElementById('conflictNotice');
@@ -81,12 +82,9 @@ async function updateQuotesFromServer() {
       category: "Server"
     }));
 
-    // Compare current local quotes with server quotes
     if (!arraysEqual(quotes, newServerQuotes)) {
-      // Conflict detected, save server data cache but do NOT overwrite local yet
       conflictDetected = true;
       serverQuotesCache = newServerQuotes;
-
       conflictNotice.style.display = 'block';
       status.textContent = 'Conflict detected between local and server data. Please choose an action.';
     } else {
@@ -138,3 +136,4 @@ document.addEventListener('DOMContentLoaded', () => {
   updateQuotesFromServer(); // initial sync
   setInterval(updateQuotesFromServer, 60000); // periodic sync every 60 seconds
 });
+
