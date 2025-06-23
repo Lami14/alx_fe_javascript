@@ -1,6 +1,6 @@
+const SERVER_URL = "https://mocki.io/v1/your-mock-endpoint-id"; // Replace with your real endpoint
 let quotes = [];
 
-// Load quotes from localStorage or use defaults
 function loadQuotes() {
   const storedQuotes = localStorage.getItem('quotes');
   if (storedQuotes) {
@@ -15,12 +15,10 @@ function loadQuotes() {
   }
 }
 
-// Save quotes to localStorage
 function saveQuotes() {
   localStorage.setItem('quotes', JSON.stringify(quotes));
 }
 
-// Populate the category dropdown based on existing quotes
 function populateCategories() {
   const categories = [...new Set(quotes.map(q => q.category))];
   const select = document.getElementById('categoryFilter');
@@ -40,7 +38,6 @@ function populateCategories() {
   }
 }
 
-// Filter and display quotes based on selected category
 function filterQuotes() {
   const selectedCategory = document.getElementById('categoryFilter').value;
   localStorage.setItem('lastCategory', selectedCategory);
@@ -60,12 +57,10 @@ function filterQuotes() {
   }
 }
 
-// Show a random quote within the current filter
 function showRandomQuote() {
-  filterQuotes(); // already includes random selection logic
+  filterQuotes();
 }
 
-// Export quotes to a JSON file
 function exportToJsonFile() {
   const blob = new Blob([JSON.stringify(quotes, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -77,7 +72,6 @@ function exportToJsonFile() {
   document.body.removeChild(link);
 }
 
-// Import quotes from a selected JSON file
 function importFromJsonFile(event) {
   const fileReader = new FileReader();
   fileReader.onload = function(e) {
@@ -102,7 +96,6 @@ function importFromJsonFile(event) {
   fileReader.readAsText(event.target.files[0]);
 }
 
-// Restore last shown quote based on sessionStorage
 function restoreLastQuote() {
   const index = sessionStorage.getItem('lastQuoteIndex');
   if (index !== null && quotes[index]) {
@@ -110,7 +103,33 @@ function restoreLastQuote() {
   }
 }
 
-// Initialization
+// 🔄 Sync with simulated server (server wins in conflict)
+async function fetchQuotesFromServer() {
+  const statusEl = document.getElementById('syncStatus');
+  try {
+    const res = await fetch(SERVER_URL);
+    const serverQuotes = await res.json();
+
+    const serverSet = new Set(serverQuotes.map(q => JSON.stringify(q)));
+    const localSet = new Set(quotes.map(q => JSON.stringify(q)));
+
+    const isDifferent = serverQuotes.length !== quotes.length ||
+      [...serverSet].some(item => !localSet.has(item));
+
+    if (isDifferent) {
+      quotes = serverQuotes;
+      saveQuotes();
+      populateCategories();
+      statusEl.innerText = "Quotes synced from server (server version applied).";
+    } else {
+      statusEl.innerText = "Quotes are up-to-date with the server.";
+    }
+  } catch (error) {
+    statusEl.innerText = "Failed to sync with server.";
+    console.error("Sync error:", error);
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   loadQuotes();
   populateCategories();
@@ -120,4 +139,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('exportBtn').addEventListener('click', exportToJsonFile);
   document.getElementById('importFile').addEventListener('change', importFromJsonFile);
   document.getElementById('categoryFilter').addEventListener('change', filterQuotes);
+  document.getElementById('syncNowBtn').addEventListener('click', fetchQuotesFromServer);
+
+  fetchQuotesFromServer();                 // Initial sync on load
+  setInterval(fetchQuotesFromServer, 60000); // Auto-sync every 60s
 });
