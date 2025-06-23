@@ -4,30 +4,10 @@
   <meta charset="UTF-8" />
   <title>Dynamic Quote Generator</title>
   <style>
-    body {
-      font-family: sans-serif;
-      padding: 20px;
-      max-width: 600px;
-      margin: auto;
-    }
-    #quote-box {
-      border: 1px solid #ccc;
-      padding: 20px;
-      border-radius: 10px;
-      background: #f9f9f9;
-    }
-    #quoteDisplay {
-      font-size: 1.2em;
-      margin-bottom: 20px;
-    }
-    button, select, input[type="file"] {
-      margin: 10px 10px 10px 0;
-    }
-    #syncStatus {
-      color: green;
-      font-weight: bold;
-      margin-top: 10px;
-    }
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 2rem auto; padding: 1rem; }
+    #quoteDisplay { font-size: 1.5rem; margin: 2rem 0; min-height: 4rem; }
+    #syncStatus { color: green; font-weight: bold; min-height: 1.5rem; margin-bottom: 1rem; }
+    button { padding: 0.5rem 1rem; margin-right: 1rem; }
   </style>
 </head>
 <body>
@@ -38,14 +18,14 @@
     <option value="all">All Categories</option>
   </select>
 
-  <div id="quote-box">
-    <p id="quoteDisplay">Click the button to see a quote.</p>
-    <p id="syncStatus"></p>
+  <div id="quoteDisplay">Loading quotes...</div>
+
+  <div>
     <button id="newQuoteBtn">New Quote</button>
-    <button id="exportBtn">Export Quotes</button>
     <button id="syncNowBtn">Sync Now</button>
-    <input type="file" id="importFile" accept=".json" />
   </div>
+
+  <div id="syncStatus"></div>
 
   <script src="script.js"></script>
 </body>
