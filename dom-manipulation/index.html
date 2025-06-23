@@ -23,6 +23,11 @@
     button, select, input[type="file"] {
       margin: 10px 10px 10px 0;
     }
+    #syncStatus {
+      color: green;
+      font-weight: bold;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
@@ -35,8 +40,10 @@
 
   <div id="quote-box">
     <p id="quoteDisplay">Click the button to see a quote.</p>
+    <p id="syncStatus"></p>
     <button id="newQuoteBtn">New Quote</button>
     <button id="exportBtn">Export Quotes</button>
+    <button id="syncNowBtn">Sync Now</button>
     <input type="file" id="importFile" accept=".json" />
   </div>
 
@@ -44,4 +51,3 @@
 </body>
 </html>
 
-  
